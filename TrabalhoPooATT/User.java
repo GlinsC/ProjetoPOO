@@ -48,19 +48,19 @@ public class User {
     }
 
     private void exibirBemVindo() {
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║   Sistema de Livros (Letterboxd Style) ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
+        System.out.println("╔═══════════════════════════════════════════════╗");
+        System.out.println("║   Bem-vindo ao LetterBook (Sistema de Livros) ║");
+        System.out.println("╚═══════════════════════════════════════════════╝\n");
     }
 
     // --- MENUS ---
 
     private void menuPrincipal() {
-        System.out.println("\n┌─ Menu Principal ─────────────────────┐");
+        System.out.println("\n┌─ Menu Principal ──────────────────────┐");
         System.out.println("│ 1. Registrar novo usuário             │");
         System.out.println("│ 2. Fazer login                        │");
         System.out.println("│ 3. Sair                               │");
-        System.out.println("└──────────────────────────────────────┘");
+        System.out.println("└───────────────────────────────────────┘");
         System.out.print("Escolha uma opção: ");
 
         String opcao = scanner.nextLine().trim();
@@ -77,14 +77,14 @@ public class User {
     }
 
     private void menuUsuario() {
-        System.out.println("\n┌─ Usuário: " + usuarioBO.getUsuario().getNome() + " ──────────────────┐");
-        System.out.println("│ 1. Adicionar                          │");
+        System.out.println("\n┌─ Usuário: " + usuarioBO.getUsuario().getNome() + " ───────────────────┐");
+        System.out.println("│ 1. Adicionar novo livro               │");
         System.out.println("│ 2. Avaliar um livro                   │");
-        System.out.println("│ 3. Minha Estante (Livros Lidos)       │");
+        System.out.println("│ 3. Listar meus livros                 │");
         System.out.println("│ 4. Avaliações globais                 │");
         System.out.println("│ 5. Perfil                             │");
         System.out.println("│ 6. Logout                             │");
-        System.out.println("└──────────────────────────────────────┘");
+        System.out.println("└───────────────────────────────────────┘");
         System.out.print("Escolha uma opção: ");
 
         String opcao = scanner.nextLine().trim();
@@ -93,7 +93,7 @@ public class User {
             case "1": adicionarLivro(); break;
             case "2": avaliarLivro(); break;
             case "3": listarLivros(); break;
-            case "4": verDetalhesLivro(); break;
+            case "4": avaliacoesGlobais(); break;
             case "5": verPerfil(); break;
             case "6": logout(); break;
             default: System.out.println("❌ Opção inválida!");
@@ -224,8 +224,8 @@ public class User {
         }
     }
     
-    private void verDetalhesLivro() {
-        System.out.println("\n>>> Detalhes (Visão Global)");
+    private void avaliacoesGlobais() {
+        System.out.println("\n>>> Avaliações (Visão Global)");
         System.out.print("Digite o título exato do livro: ");
         String titulo = scanner.nextLine().trim();
         
