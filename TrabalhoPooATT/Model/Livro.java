@@ -1,11 +1,15 @@
 package Model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import Avaliacao.Avaliacao;
 import Service.LivroBO;
 
-public class Livro {
+// Adicionado 'implements Serializable'
+public class Livro implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String titulo;
     private String autor;
     private int ano;
@@ -19,8 +23,6 @@ public class Livro {
         this.avaliacoes = new ArrayList<>();
     }
     
-    
-    // Package-private accessor for LivroBO to manage avaliações
     public List<Avaliacao> getAvaliacoesInterno() {
         return avaliacoes;
     }

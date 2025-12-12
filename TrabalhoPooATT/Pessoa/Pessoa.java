@@ -1,8 +1,12 @@
 package Pessoa;
 
+import java.io.Serializable;
 import exception.ValidationException;
 
-public abstract class Pessoa {
+// Adicionado 'implements Serializable'
+public abstract class Pessoa implements Serializable {
+    private static final long serialVersionUID = 1L; // Versão da classe para controle
+    
     private String nome;
     private String email;
     

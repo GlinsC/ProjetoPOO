@@ -41,6 +41,14 @@ public class Usuario extends Pessoa {
     void adicionarLivroInterno(String livro) {
         livros.add(livro);
     }
+
+    public boolean removerLivro(String titulo) {
+        return livros.remove(titulo);
+    }
+    
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
     
     @Override
     public String getTipo() {

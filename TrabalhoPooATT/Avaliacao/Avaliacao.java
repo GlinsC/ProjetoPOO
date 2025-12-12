@@ -1,9 +1,13 @@
 package Avaliacao;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import Service.AvaliacaoBO;
 
-public class Avaliacao {
+// Adicionado 'implements Serializable'
+public class Avaliacao implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int estrelas;
     private String comentario;
     private LocalDateTime data;

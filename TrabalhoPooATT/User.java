@@ -1,18 +1,22 @@
 import java.util.List;
 import java.util.Scanner;
+import java.util.Optional;
+
 import Pessoa.Usuario;
 import Model.Livro;
 import Avaliacao.Avaliacao;
-import Pessoa.UsuarioBO;
+import Service.UsuarioBO;
+import Dados.UsuarioRepository; // Importante: Acesso ao Banco de Dados
 import exception.ValidationException;
 import exception.NotFoundException;
+import exception.PersistenceException;
 
 /**
  * Aplicação principal do Sistema de Livros
- * Gerencia o menu e interação com o usuário
+ * Agora integrada com Repositórios Globais
  */
 public class User {
-    private UsuarioBO usuarioBO;
+    private UsuarioBO usuarioBO; // Só é inicializado após login
     private Scanner scanner;
     private boolean logado;
 
@@ -26,33 +30,31 @@ public class User {
         app.iniciar();
     }
 
-    /**
-     * Inicia a aplicação
-     */
     private void iniciar() {
         exibirBemVindo();
 
         while (true) {
-            if (!logado) {
-                menuPrincipal();
-            } else {
-                menuUsuario();
+            try {
+                if (!logado) {
+                    menuPrincipal();
+                } else {
+                    menuUsuario();
+                }
+            } catch (Exception e) {
+                System.out.println("❌ Erro inesperado: " + e.getMessage());
+                scanner.nextLine(); // Limpa buffer
             }
         }
     }
 
-    /**
-     * Exibe a mensagem de boas-vindas
-     */
     private void exibirBemVindo() {
         System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║   Bem-vindo ao Sistema de Livros!      ║");
+        System.out.println("║   Sistema de Livros (Letterboxd Style) ║");
         System.out.println("╚════════════════════════════════════════╝\n");
     }
 
-    /**
-     * Menu principal - antes de fazer login
-     */
+    // --- MENUS ---
+
     private void menuPrincipal() {
         System.out.println("\n┌─ Menu Principal ─────────────────────┐");
         System.out.println("│ 1. Registrar novo usuário             │");
@@ -64,89 +66,23 @@ public class User {
         String opcao = scanner.nextLine().trim();
 
         switch (opcao) {
-            case "1":
-                registrarUsuario();
+            case "1": registrarUsuario(); break;
+            case "2": fazerLogin(); break;
+            case "3": 
+                System.out.println("Saindo..."); 
+                System.exit(0); 
                 break;
-            case "2":
-                fazerLogin();
-                break;
-            case "3":
-                System.out.println("\nAté logo!");
-                System.exit(0);
-                break;
-            default:
-                System.out.println("❌ Opção inválida!");
+            default: System.out.println("❌ Opção inválida!");
         }
     }
 
-    /**
-     * Registra um novo usuário
-     */
-    private void registrarUsuario() {
-        System.out.println("\n┌─ Registro de Novo Usuário ───────────┐");
-        try {
-            System.out.print("Nome: ");
-            String nome = scanner.nextLine().trim();
-            if (nome.isEmpty()) {
-                System.out.println("❌ Nome não pode ser vazio!");
-                return;
-            }
-
-            System.out.print("Email: ");
-            String email = scanner.nextLine().trim();
-
-            System.out.print("Senha: ");
-            String senha = scanner.nextLine().trim();
-            if (senha.isEmpty()) {
-                System.out.println("❌ Senha não pode ser vazia!");
-                return;
-            }
-
-            Usuario usuario = new Usuario(nome, email, senha);
-            usuarioBO = new UsuarioBO(usuario);
-            logado = true;
-            System.out.println("✓ Usuário registrado com sucesso!");
-            System.out.println("✓ Bem-vindo, " + nome + "!");
-        } catch (ValidationException e) {
-            System.out.println("❌ Erro: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Faz login do usuário
-     */
-    private void fazerLogin() {
-        if (usuarioBO == null) {
-            System.out.println("❌ Nenhum usuário registrado ainda!");
-            return;
-        }
-
-        System.out.println("\n┌─ Login ───────────────────────────────┐");
-        System.out.print("Email: ");
-        String email = scanner.nextLine().trim();
-
-        System.out.print("Senha: ");
-        String senha = scanner.nextLine().trim();
-
-        if (usuarioBO.fazerLogin(email, senha)) {
-            logado = true;
-            System.out.println("✓ Login realizado com sucesso!");
-            System.out.println("✓ Bem-vindo, " + usuarioBO.getUsuario().getNome() + "!");
-        } else {
-            System.out.println("❌ Email ou senha incorretos!");
-        }
-    }
-
-    /**
-     * Menu do usuário - após fazer login
-     */
     private void menuUsuario() {
-        System.out.println("\n┌─ Menu do Usuário: " + usuarioBO.getUsuario().getNome() + " ───┐");
-        System.out.println("│ 1. Adicionar novo livro               │");
+        System.out.println("\n┌─ Usuário: " + usuarioBO.getUsuario().getNome() + " ──────────────────┐");
+        System.out.println("│ 1. Adicionar                          │");
         System.out.println("│ 2. Avaliar um livro                   │");
-        System.out.println("│ 3. Listar meus livros                 │");
-        System.out.println("│ 4. Ver detalhes de um livro           │");
-        System.out.println("│ 5. Ver meu perfil                     │");
+        System.out.println("│ 3. Minha Estante (Livros Lidos)       │");
+        System.out.println("│ 4. Avaliações globais                 │");
+        System.out.println("│ 5. Perfil                             │");
         System.out.println("│ 6. Logout                             │");
         System.out.println("└──────────────────────────────────────┘");
         System.out.print("Escolha uma opção: ");
@@ -154,202 +90,170 @@ public class User {
         String opcao = scanner.nextLine().trim();
 
         switch (opcao) {
-            case "1":
-                adicionarLivro();
-                break;
-            case "2":
-                avaliarLivro();
-                break;
-            case "3":
-                listarLivros();
-                break;
-            case "4":
-                verDetalhesLivro();
-                break;
-            case "5":
-                verPerfil();
-                break;
-            case "6":
-                logout();
-                break;
-            default:
-                System.out.println("❌ Opção inválida!");
+            case "1": adicionarLivro(); break;
+            case "2": avaliarLivro(); break;
+            case "3": listarLivros(); break;
+            case "4": verDetalhesLivro(); break;
+            case "5": verPerfil(); break;
+            case "6": logout(); break;
+            default: System.out.println("❌ Opção inválida!");
         }
     }
 
-    /**
-     * Adiciona um novo livro à biblioteca do usuário
-     */
+    // --- AÇÕES PRINCIPAIS ---
+
+    private void registrarUsuario() {
+        System.out.println("\n>>> Registro");
+        try {
+            System.out.print("Nome: ");
+            String nome = scanner.nextLine().trim();
+            
+            System.out.print("Email: ");
+            String email = scanner.nextLine().trim();
+
+            System.out.print("Senha: ");
+            String senha = scanner.nextLine().trim();
+
+            Usuario usuario = new Usuario(nome, email, senha);
+            
+            // Salva no Repositório Global
+            UsuarioRepository.salvar(usuario);
+            
+            System.out.println("✓ Usuário registrado! Faça login para continuar.");
+            
+        } catch (ValidationException | PersistenceException e) {
+            System.out.println("❌ Erro de validação: " + e.getMessage());
+        }
+    }
+
+    private void fazerLogin() {
+        System.out.println("\n>>> Login");
+        System.out.print("Email: ");
+        String email = scanner.nextLine().trim();
+
+        System.out.print("Senha: ");
+        String senha = scanner.nextLine().trim();
+
+        // Busca no Repositório Global
+        Optional<Usuario> userOpt = UsuarioRepository.buscarPorEmail(email);
+
+        if (userOpt.isPresent()) {
+            Usuario usuarioEncontrado = userOpt.get();
+            if (usuarioEncontrado.validarSenha(senha)) {
+                // Inicializa o Service com o usuário encontrado
+                this.usuarioBO = new UsuarioBO(usuarioEncontrado);
+                this.logado = true;
+                System.out.println("✓ Login realizado com sucesso!");
+            } else {
+                System.out.println("❌ Senha incorreta!");
+            }
+        } else {
+            System.out.println("❌ Usuário não encontrado!");
+        }
+    }
+
+    // --- AÇÕES DO USUÁRIO ---
+
     private void adicionarLivro() {
-        System.out.println("\n┌─ Adicionar Novo Livro ────────────────┐");
+        System.out.println("\n>>> Adicionar Livro à Estante");
         try {
             System.out.print("Título: ");
             String titulo = scanner.nextLine().trim();
-            if (titulo.isEmpty()) {
-                System.out.println("❌ Título não pode ser vazio!");
-                return;
-            }
-
+            
             System.out.print("Autor: ");
             String autor = scanner.nextLine().trim();
-            if (autor.isEmpty()) {
-                System.out.println("❌ Autor não pode ser vazio!");
-                return;
-            }
 
-            System.out.print("Ano de publicação: ");
-            int ano;
-            try {
-                ano = Integer.parseInt(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.println("❌ Ano deve ser um número inteiro!");
-                return;
-            }
+            System.out.print("Ano: ");
+            int ano = Integer.parseInt(scanner.nextLine().trim());
 
             Livro livro = new Livro(titulo, autor, ano);
             usuarioBO.adicionarLivro(livro);
-
-            System.out.println("✓ Livro adicionado com sucesso!");
-            System.out.println("✓ " + livro);
+            System.out.println("✓ Livro registrado na sua estante!");
+            
+        } catch (NumberFormatException e) {
+            System.out.println("❌ Ano inválido.");
         } catch (ValidationException e) {
-            System.out.println("❌ Erro: " + e.getMessage());
+            System.out.println("❌ " + e.getMessage());
         }
     }
 
-    /**
-     * Avalia um livro
-     */
-    private void avaliarLivro() {
-        System.out.println("\n┌─ Avaliar um Livro ────────────────────┐");
-
-        if (usuarioBO.quantidadeLivros() == 0) {
-            System.out.println("❌ Você ainda não tem livros adicionados!");
-            return;
-        }
-
-        System.out.println("Seus livros:");
-        List<Livro> livros = usuarioBO.listarLivros();
-        for (int i = 0; i < livros.size(); i++) {
-            System.out.println((i + 1) + ". " + livros.get(i).getTitulo());
-        }
-
-        System.out.print("Selecione o número do livro: ");
-        int indice;
-        try {
-            indice = Integer.parseInt(scanner.nextLine().trim()) - 1;
-            if (indice < 0 || indice >= livros.size()) {
-                System.out.println("❌ Número inválido!");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("❌ Deve ser um número!");
-            return;
-        }
-
-        Livro livro = livros.get(indice);
-
-        System.out.print("Quantidade de estrelas (1-5): ");
-        int estrelas;
-        try {
-            estrelas = Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            System.out.println("❌ Deve ser um número!");
-            return;
-        }
-
-        System.out.print("Comentário (ou pressione Enter para pular): ");
-        String comentario = scanner.nextLine().trim();
-        if (comentario.isEmpty()) {
-            comentario = null;
-        }
-
-        try {
-            usuarioBO.avaliarLivro(livro.getTitulo(), estrelas, comentario);
-            System.out.println("✓ Avaliação adicionada com sucesso!");
-            Avaliacao avaliacao = new Avaliacao(estrelas, comentario);
-            System.out.println(avaliacao);
-        } catch (ValidationException | NotFoundException e) {
-            System.out.println("❌ Erro: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Lista todos os livros do usuário
-     */
     private void listarLivros() {
-        System.out.println("\n┌─ Meus Livros ─────────────────────────┐");
-
-        if (usuarioBO.quantidadeLivros() == 0) {
-            System.out.println("Você ainda não tem livros adicionados.");
-            return;
-        }
-
-        System.out.println("Total de livros: " + usuarioBO.quantidadeLivros() + "\n");
+        System.out.println("\n>>> Minha Estante");
         List<Livro> livros = usuarioBO.listarLivros();
-        for (int i = 0; i < livros.size(); i++) {
-            System.out.println((i + 1) + ". " + livros.get(i));
-        }
-    }
-
-    /**
-     * Mostra detalhes de um livro específico
-     */
-    private void verDetalhesLivro() {
-        System.out.println("\n┌─ Detalhes do Livro ────────────────────┐");
-
-        if (usuarioBO.quantidadeLivros() == 0) {
-            System.out.println("❌ Você ainda não tem livros adicionados!");
-            return;
-        }
-
-        System.out.println("Seus livros:");
-        List<Livro> livros = usuarioBO.listarLivros();
-        for (int i = 0; i < livros.size(); i++) {
-            System.out.println((i + 1) + ". " + livros.get(i).getTitulo());
-        }
-
-        System.out.print("Selecione o número do livro: ");
-        int indice;
-        try {
-            indice = Integer.parseInt(scanner.nextLine().trim()) - 1;
-            if (indice < 0 || indice >= livros.size()) {
-                System.out.println("❌ Número inválido!");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("❌ Deve ser um número!");
-            return;
-        }
-
-        Livro livro = livros.get(indice);
-
-        System.out.println("\n" + livro);
-        System.out.println("\nAvaliações:");
-
-        List<Avaliacao> avaliacoes = usuarioBO.obterAvaliacoesLivro(livro.getTitulo());
-        if (avaliacoes.isEmpty()) {
-            System.out.println("Este livro ainda não tem avaliações.");
+        
+        if (livros.isEmpty()) {
+            System.out.println("Sua estante está vazia.");
         } else {
-            for (int i = 0; i < avaliacoes.size(); i++) {
-                System.out.println("\n--- Avaliação " + (i + 1) + " ---");
-                System.out.println(avaliacoes.get(i));
+            for (Livro l : livros) {
+                System.out.println("📖 " + l.toString());
             }
         }
     }
 
-    /**
-     * Exibe o perfil do usuário
-     */
-    private void verPerfil() {
-        System.out.println("\n" + usuarioBO.obterPerfil());
+    private void avaliarLivro() {
+        System.out.println("\n>>> Avaliar Livro");
+        // Listar primeiro para facilitar
+        List<Livro> livros = usuarioBO.listarLivros();
+        if (livros.isEmpty()) {
+            System.out.println("Adicione livros antes de avaliar.");
+            return;
+        }
+
+        for (int i = 0; i < livros.size(); i++) {
+            System.out.println((i+1) + ". " + livros.get(i).getTitulo());
+        }
+        
+        System.out.print("Número do livro: ");
+        try {
+            int idx = Integer.parseInt(scanner.nextLine()) - 1;
+            if (idx < 0 || idx >= livros.size()) return;
+            
+            Livro alvo = livros.get(idx);
+            
+            System.out.print("Estrelas (1-5): ");
+            int estrelas = Integer.parseInt(scanner.nextLine());
+            
+            System.out.print("Comentário: ");
+            String comentario = scanner.nextLine();
+            
+            usuarioBO.avaliarLivro(alvo.getTitulo(), estrelas, comentario);
+            System.out.println("✓ Avaliação registrada no sistema global!");
+            
+        } catch (Exception e) {
+            System.out.println("❌ Erro ao avaliar: " + e.getMessage());
+        }
+    }
+    
+    private void verDetalhesLivro() {
+        System.out.println("\n>>> Detalhes (Visão Global)");
+        System.out.print("Digite o título exato do livro: ");
+        String titulo = scanner.nextLine().trim();
+        
+        try {
+            Livro livro = usuarioBO.obterLivro(titulo);
+            System.out.println(livro.toString());
+            System.out.println("--- Avaliações da Comunidade ---");
+            
+            List<Avaliacao> avaliacoes = usuarioBO.obterAvaliacoesLivro(titulo);
+            if (avaliacoes.isEmpty()) {
+                System.out.println("Nenhuma avaliação ainda.");
+            } else {
+                avaliacoes.forEach(a -> System.out.println(a));
+            }
+            
+        } catch (NotFoundException e) {
+            System.out.println("❌ Livro não encontrado na biblioteca global.");
+        }
     }
 
-    /**
-     * Realiza logout do usuário
-     */
+    private void verPerfil() {
+        System.out.println("\n>>> Perfil");
+        System.out.println(usuarioBO.obterPerfil());
+    }
+
     private void logout() {
-        System.out.println("\n✓ Logout realizado com sucesso!");
-        logado = false;
-        usuarioBO = null;
+        this.usuarioBO = null;
+        this.logado = false;
+        System.out.println("✓ Logout realizado.");
     }
 }
